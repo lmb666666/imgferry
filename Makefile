@@ -1,6 +1,6 @@
 # imgferry 开发与发布常用命令
 BINARY := imgferry
-PKG    := ./cmd/imgferry
+PKG    := .
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X github.com/lmb666666/imgferry/internal/cli.version=$(VERSION)
 

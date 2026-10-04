@@ -2,6 +2,10 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.1] - 2026-10-04
+
+- 修正安装路径：命令行入口移到模块根，`go install github.com/lmb666666/imgferry@latest` 现在可以直接用（v0.1.0 需要写成 `.../imgferry/cmd/imgferry@v0.1.0`）。功能与 v0.1.0 一致
+
 ## [0.1.0] - 2026-10-04
 
 首个可用版本：把存量文章里的旧图床链接迁移到兰空 Lsky Pro，全流程安全可控。

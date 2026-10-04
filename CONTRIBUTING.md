@@ -19,7 +19,7 @@ gofmt -l .              # 格式检查（CI 会卡这条）
 ## 代码结构
 
 ```
-cmd/imgferry/        命令行入口
+main.go              命令行入口（放在模块根，这样 go install <模块>@latest 就能直接用）
 internal/scan/       文件发现 + 链接提取（按文件类型分层解析）
 internal/download/   下载器（自定义请求头、重试、文件名推断）
 internal/upload/     adapter 接口与注册

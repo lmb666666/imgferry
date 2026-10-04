@@ -75,7 +75,7 @@ go install github.com/lmb666666/imgferry@latest
 ```bash
 git clone https://github.com/lmb666666/imgferry
 cd imgferry
-go build -o imgferry ./cmd/imgferry
+go build -o imgferry .
 ```
 
 Homebrew 与预编译二进制在计划中。
