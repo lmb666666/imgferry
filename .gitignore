@@ -1,0 +1,28 @@
+# 构建产物
+/imgferry
+/dist/
+*.exe
+
+# 运行期数据：映射表、备份、导出的计划文件
+migrate-map.json
+*.bak
+imgferry-plan-*.md
+
+# 本地配置文件（真实配置在 ~/.config/imgferry/）
+config.toml
+
+# 开发过程文档（策划案 / 重构方案 / 界面规格 / 评审稿生成器）：仅本地保留
+/docs/
+__pycache__/
+
+# 本地测试用的真实博客样本（不进仓库；示例见 testdata/sample.md）
+/test/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 本仓库用的 Agent 工具配置
+.zcodeignore

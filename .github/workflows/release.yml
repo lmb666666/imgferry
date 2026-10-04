@@ -1,0 +1,114 @@
+name: Release
+
+# 推一个 v* 标签即触发：先跑测试，再交叉编译各平台二进制，最后创建 Release 并挂上产物。
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: 测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: 代码格式检查
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - name: go vet
+        run: go vet ./...
+      - name: 测试（含竞态检测）
+        run: go test -race ./...
+
+  build:
+    name: 构建 ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: 交叉编译
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          set -euo pipefail
+          name="imgferry"
+          [ "$GOOS" = "windows" ] && name="imgferry.exe"
+          go build -trimpath \
+            -ldflags "-s -w -X github.com/lmb666666/imgferry/internal/cli.version=${{ github.ref_name }}" \
+            -o "dist/$name" ./cmd/imgferry
+          # 只有 runner 自身的平台能直接执行；其余用 file 确认架构与格式
+          if [ "$GOOS/$GOARCH" = "linux/amd64" ]; then
+            ./dist/$name version
+          else
+            file "dist/$name"
+          fi
+
+      - name: 打包
+        run: |
+          set -euo pipefail
+          cd dist
+          base="imgferry_${{ github.ref_name }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            # 用 python3 打 zip：不依赖 runner 上是否装了 zip 命令
+            python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1],'w',zipfile.ZIP_DEFLATED).write(sys.argv[2], arcname=sys.argv[2])" "${base}.zip" imgferry.exe
+            rm -f imgferry.exe
+          else
+            tar czf "${base}.tar.gz" imgferry
+            rm -f imgferry
+          fi
+          ls -lh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: 发布 Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: 生成校验文件
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum ./* > checksums.txt
+          cat checksums.txt
+
+      - name: 创建 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/*
