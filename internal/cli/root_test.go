@@ -106,3 +106,20 @@ func TestRunRequiresYes(t *testing.T) {
 		t.Fatalf("错误信息应提示加 --yes：%v", err)
 	}
 }
+
+// TestResolveVersion 断言版本号来源的优先级：ldflags 注入 > 模块版本 > dev。
+func TestResolveVersion(t *testing.T) {
+	cases := []struct{ injected, module, want string }{
+		{"v1.2.3", "v9.9.9", "v1.2.3"},  // ldflags 注入优先
+		{"dev", "v0.1.2", "v0.1.2"},     // go install：无 ldflags，用模块版本
+		{"", "v0.1.2", "v0.1.2"},        // 同上（未设置）
+		{"v1.2.3", "(devel)", "v1.2.3"}, // 本地构建带 ldflags
+		{"dev", "(devel)", "dev"},       // 本地 go build：显示 dev
+		{"dev", "", "dev"},              // 构建信息缺失
+	}
+	for _, c := range cases {
+		if got := resolveVersion(c.injected, c.module); got != c.want {
+			t.Errorf("resolveVersion(%q, %q) = %q，期望 %q", c.injected, c.module, got, c.want)
+		}
+	}
+}

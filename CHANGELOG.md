@@ -2,6 +2,11 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.1.2] - 2026-10-04
+
+- `imgferry version` 在 `go install github.com/lmb666666/imgferry@<版本>` 这类不带 ldflags 的构建里，
+  改为从二进制构建信息读取模块版本（之前会显示 `dev`），便于报障时核对版本
+
 ## [0.1.1] - 2026-10-04
 
 - 修正安装路径：命令行入口移到模块根，`go install github.com/lmb666666/imgferry@latest` 现在可以直接用（v0.1.0 需要写成 `.../imgferry/cmd/imgferry@v0.1.0`）。功能与 v0.1.0 一致

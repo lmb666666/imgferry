@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -19,8 +20,27 @@ import (
 	"github.com/lmb666666/imgferry/internal/upload/lsky"
 )
 
-// version 由构建时 -ldflags 注入。
+// version 由构建时 -ldflags 注入；未注入时（例如 go install <模块>@<版本>）
+// 从二进制里记录的构建信息取模块版本，保证 imgferry version 能报出真实版本。
 var version = "dev"
+
+func init() {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		version = resolveVersion(version, info.Main.Version)
+	}
+}
+
+// resolveVersion 选择要展示的版本号：ldflags 注入优先，其次模块版本，
+// "(devel)"/空 表示本地源码构建，保持 "dev"。
+func resolveVersion(injected, moduleVersion string) string {
+	if injected != "" && injected != "dev" {
+		return injected
+	}
+	if moduleVersion != "" && moduleVersion != "(devel)" {
+		return moduleVersion
+	}
+	return "dev"
+}
 
 // Execute 是命令行入口。
 func Execute() {
